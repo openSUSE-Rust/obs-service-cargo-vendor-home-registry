@@ -54,8 +54,10 @@ It will be just a simple third option in the *manifest_option* i.e. `--manifest-
 
 When a crate does not have a lockfile at all. We will be warning the users
 that if such a case arises, we will force generate the lockfile using `cargo
-update` with the following scenarios - if network connection exists, attempt
-to just run `cargo update` normally; otherwise - add the `--offline` option
+update` with the following scenarios
+- if network connection exists, attempt to just run `cargo update` normally;
+otherwise
+- add the `--offline` option
 
 If the lockfile exists or regenerated (because it didn't exist at first),
 we will add a `--locked` option when attempting to `cargo fetch`.
