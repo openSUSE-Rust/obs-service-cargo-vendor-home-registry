@@ -1,0 +1,50 @@
+# -- global options --
+# Globally overrides unset options. Set options are highest priority
+# Defaults for global options are the following:
+update = true
+lock = false
+
+# Autogeneration sets this to the name of the crate
+["crateA"]
+# Source tarball or directory of crate
+# Most Rust projects only have one source tarball.
+# This option covers the most unusual use-case where
+# a project has multiple sources.
+# If there are multiple sources, the user will be instructed
+# to set the `$CARGO_HOME` properly in the specfile e.g.
+# path to the extracted %{SOURCE0}.
+source = ""
+# Custom path to root manifest if necessary. Default: <none>
+# manifest-path."<path>" can still be used as an alternative since we are vendoring the cargo home registry anyway. 
+# Just some semantics so people won't get confused.
+root-manifest = ""
+update = true
+lock = false
+
+manifest-paths = [
+        # Autogeneration sets this to the path of the crate
+        { path = "subcrateA", update = true, lock = false },
+        # If lock is set to true, it overrides `update`'s value to false
+        # but if a lockfile does not exist, warn user and attempt to update. (network connection
+        # can also be a factor too for update so warn user if such a case arises)
+        { path = "subcrateB", update = true, lock = true },
+]
+
+
+# Custom options is identical to the first one
+["crateB"]
+# Source tarball or directory of crate
+source = ""
+root-manifest = ""
+update = true
+lock = false
+
+manifest-paths = [
+        { path = "subcrateA", update = true, lock = false },
+        # If lock is set to true, it overrides `update`'s value to false
+        # but if a lockfile does not exist, warn user and attempt to update. (network connection
+        # can also be a factor too for update so warn user if such a case arises)
+        { path = "subcrateB", update = true, lock = true },
+]
+
+
