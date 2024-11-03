@@ -8,6 +8,7 @@ use libroast::{
 	},
 	utils::{self, copy_dir_all, is_supported_format},
 };
+use rustsec::registry;
 use std::{
 	fs, io,
 	path::{Path, PathBuf},
@@ -130,18 +131,20 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 	if let Some(custom_root) = &registry.custom_root {
 		setup_workdir.push(custom_root);
 	}
-	if registry.update {
-		info!("⏫ Updating dependencies...");
-		cargo_update(&setup_workdir, home_registry_dot_cargo, "")?;
-		info!("✅ Updated dependencies.");
+	if !registry.no_root_manifest {
+		if registry.update {
+			info!("⏫ Updating dependencies...");
+			cargo_update(&setup_workdir, home_registry_dot_cargo, "")?;
+			info!("✅ Updated dependencies.");
+		}
+		info!(?setup_workdir, "🌳 Finished setting up workdir.");
+		info!("🔓Attempting to regenerate lockfile...");
+		cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "")?;
+		info!("🔒Regenerated lockfile.");
+		info!("🚝 Attempting to fetch dependencies.");
+		cargo_fetch(&setup_workdir, home_registry_dot_cargo, "")?;
+		info!("💼 Fetched dependencies.");
 	}
-	info!(?setup_workdir, "🌳 Finished setting up workdir.");
-	info!("🔓Attempting to regenerate lockfile...");
-	cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "")?;
-	info!("🔒Regenerated lockfile.");
-	info!("🚝 Attempting to fetch dependencies.");
-	cargo_fetch(&setup_workdir, home_registry_dot_cargo, "")?;
-	info!("💼 Fetched dependencies.");
 	let mut lockfiles: Vec<PathBuf> = Vec::new();
 	for manifest in &registry.manifest_paths {
 		let full_manifest_path = &setup_workdir.join(manifest);
@@ -189,21 +192,23 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 			}
 		}
 	}
-	let possible_root_lockfile = &setup_workdir.join("Cargo.lock");
-	if possible_root_lockfile.exists() {
-		info!(
-			?possible_root_lockfile,
-			"🔒 👀 Found the root lockfile. Adding it to home registry for vendoring."
-		);
-		let stripped_lockfile_path =
-			possible_root_lockfile.strip_prefix(&setup_workdir).unwrap_or(possible_root_lockfile);
-		let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
-		let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
-		fs::create_dir_all(new_lockfile_parent)?;
-		fs::copy(possible_root_lockfile, new_lockfile_path)?;
-		info!(?possible_root_lockfile, "🔒 🌟 Successfully added the root lockfile.");
+	if !registry.no_root_manifest {
+		let possible_root_lockfile = &setup_workdir.join("Cargo.lock");
+		if possible_root_lockfile.exists() {
+			info!(
+				?possible_root_lockfile,
+				"🔒 👀 Found the root lockfile. Adding it to home registry for vendoring."
+			);
+			let stripped_lockfile_path =
+				possible_root_lockfile.strip_prefix(&setup_workdir).unwrap_or(possible_root_lockfile);
+			let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
+			let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
+			fs::create_dir_all(new_lockfile_parent)?;
+			fs::copy(possible_root_lockfile, new_lockfile_path)?;
+			info!(?possible_root_lockfile, "🔒 🌟 Successfully added the root lockfile.");
+		}
+		lockfiles.push(possible_root_lockfile.to_path_buf());
 	}
-	lockfiles.push(possible_root_lockfile.to_path_buf());
 	info!("🛡️🫥 Auditing lockfiles...");
 	if let Ok(audit_result) = audit::perform_cargo_audit(&lockfiles, &registry.i_accept_the_risk) {
 		audit::process_reports(audit_result).map_err(|err| {

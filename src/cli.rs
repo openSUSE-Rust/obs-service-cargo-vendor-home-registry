@@ -23,5 +23,7 @@ pub struct HomeRegistryArgs {
 	#[arg(long, short = 'u', default_value_t = true)]
 	pub update: bool,
 	#[arg(long, short = 'C')]
-	pub custom_root: Option<String>
+	pub custom_root: Option<String>,
+    	#[arg(long, short = 'N', default_value_t = false)]
+    	pub no_root_manifest: bool
 }
