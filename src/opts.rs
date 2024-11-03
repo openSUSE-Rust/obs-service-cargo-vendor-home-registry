@@ -18,6 +18,11 @@ use libroast::{
 		is_supported_format,
 	},
 };
+use sha3::{
+	digest,
+	Digest,
+	Keccak256,
+};
 use std::{
 	fs,
 	io,
@@ -63,59 +68,11 @@ pub fn cargo_command(
 	Ok(stdoutput.to_string())
 }
 
-fn cargo_fetch(curdir: &Path, cargo_home: &Path, manifest: &str, update: bool)
-	-> io::Result<String>
-{
-	std::env::set_var("CARGO_HOME", cargo_home);
-	let mut default_options: Vec<String> = vec![];
-	let manifest_path = PathBuf::from(&manifest);
-	let manifest_path_parent = manifest_path.parent().unwrap_or(curdir);
-	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
-	if !update
-	{
-		if possible_lockfile.is_file()
-		{
-			default_options.push("--locked".to_string());
-		}
-		else
-		{
-			warn!(
-				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
-				 false to true."
-			);
-		}
-	}
-	if !manifest.is_empty()
-	{
-		default_options.push("--manifest-path".to_string());
-		default_options.push(manifest.to_string());
-	}
-	let res = cargo_command("fetch", &default_options, curdir);
-	match res
-	{
-		Ok(ok) => Ok(ok),
-		Err(err) =>
-		{
-			debug!(?err);
-			error!(
-				"🛑 The lockfile needs to be updated. This operation will fail. Please set the setting \
-				 `--update` to true."
-			);
-			error!(
-				?possible_lockfile,
-				"❌ 🔒 Lockfile was not regenerated for and needs update. Aborting gracefully..."
-			);
-			Err(err)
-		}
-	}
-}
-
-fn cargo_generate_lockfile(
+fn cargo_fetch(
 	curdir: &Path,
 	cargo_home: &Path,
 	manifest: &str,
-	update: bool,
-	ignore_rust_version: bool,
+	mut update: bool,
 ) -> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
@@ -135,6 +92,69 @@ fn cargo_generate_lockfile(
 				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
 				 false to true."
 			);
+			update = true;
+		}
+	}
+	if !manifest.is_empty()
+	{
+		default_options.push("--manifest-path".to_string());
+		default_options.push(manifest.to_string());
+	}
+	let res = cargo_command("fetch", &default_options, curdir);
+	match res
+	{
+		Ok(ok) => Ok(ok),
+		Err(err) =>
+		{
+			if !update
+			{
+				debug!(?err);
+				error!(
+					"🛑 The lockfile needs to be updated. This operation will fail. Please set the setting \
+					 `--update` to true."
+				);
+				error!(
+					?possible_lockfile,
+					"❌ 🔒 Lockfile was not regenerated for and needs update. Aborting gracefully..."
+				);
+			}
+			Err(err)
+		}
+	}
+}
+
+fn cargo_generate_lockfile(
+	curdir: &Path,
+	cargo_home: &Path,
+	manifest: &str,
+	mut update: bool,
+	ignore_rust_version: bool,
+) -> io::Result<String>
+{
+	std::env::set_var("CARGO_HOME", cargo_home);
+	let mut has_update_value_changed = false;
+	let mut hasher1 = Keccak256::default();
+	let mut hasher2 = Keccak256::default();
+	let mut default_options: Vec<String> = vec![];
+	let manifest_path = PathBuf::from(&manifest);
+	let manifest_path_parent = manifest_path.parent().unwrap_or(curdir);
+	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
+	if !update
+	{
+		if possible_lockfile.is_file()
+		{
+			default_options.push("--locked".to_string());
+			let lockfile_bytes = fs::read(&possible_lockfile)?;
+			hasher1.update(&lockfile_bytes);
+		}
+		else
+		{
+			warn!(
+				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
+				 false to true."
+			);
+			update = true;
+			has_update_value_changed = true;
 		}
 	}
 	if ignore_rust_version
@@ -147,6 +167,34 @@ fn cargo_generate_lockfile(
 		default_options.push(manifest.to_string());
 	}
 	let res = cargo_command("generate-lockfile", &default_options, curdir);
+	if possible_lockfile.exists()
+	{
+		let lockfile_bytes = fs::read(&possible_lockfile)?;
+		hasher2.update(&lockfile_bytes);
+	}
+	let hash1 = hex::encode(hasher1.finalize());
+	let hash2 = hex::encode(hasher2.finalize());
+	if hash1 != hash2
+	{
+		debug!(?hash1, ?hash2);
+		warn!("⚠️ Lockfile has changed");
+		warn!("Previous hash: {}", hash1);
+		warn!("New hash: {}", hash2);
+		warn!(
+			"⚠️ If you wish to respect the lockfile, consider not setting `--update` to true. However, \
+			 this MIGHT FAIL in some cases."
+		);
+		if has_update_value_changed && update
+		{
+			warn!("⚠️ There was no lockfile present. Your dependencies MIGHT have updated.");
+		}
+	}
+	else
+	{
+		info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
+		info!("Previous hash: {}", hash1);
+		info!("New hash: {}", hash2);
+	}
 	// NOTE: A generate-lockfile is equivalent to `cargo update`. I wonder why it is
 	// ambigious. I probably need to open an issue to cargo upstream.
 	match res
@@ -155,14 +203,6 @@ fn cargo_generate_lockfile(
 		Err(err) =>
 		{
 			debug!(?err);
-			if !update
-			{
-				warn!(
-					"⚠️ A lockfile already exists. If you wish to respect the lockfile, consider not \
-					 setting `--update` to true. However, this MIGHT FAIL in some cases."
-				);
-				info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
-			}
 			Ok(err.to_string())
 		}
 	}
