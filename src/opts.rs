@@ -80,6 +80,13 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
 	let mut default_options = vec![];
+	let manifest_path = PathBuf::from(&manifest);
+	let manifest_path_parent = manifest_path.parent().unwrap_or(curdir);
+	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
+	if possible_lockfile.is_file()
+	{
+		default_options.push("--locked".to_string());
+	}
 	if !manifest.is_empty()
 	{
 		default_options.push("--manifest-path".to_string());
@@ -91,7 +98,7 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
-	let mut default_options = vec![];
+	let mut default_options = vec!["--locked".to_string()];
 	if !manifest.is_empty()
 	{
 		default_options.push("--manifest-path".to_string());
