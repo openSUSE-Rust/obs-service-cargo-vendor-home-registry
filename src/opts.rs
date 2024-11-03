@@ -18,7 +18,6 @@ use libroast::{
 		is_supported_format,
 	},
 };
-use rustsec::registry;
 use std::{
 	fs,
 	io,
