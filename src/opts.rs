@@ -19,7 +19,6 @@ use libroast::{
 	},
 };
 use sha3::{
-	digest,
 	Digest,
 	Keccak256,
 };
@@ -464,5 +463,8 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 	};
 	roast_opts(&roast_args, false)?;
 	info!("📦 Cargo Vendor Home Registry finished.");
+	info!("🧹 Cleaning up workdir");
+	tempdir_for_home_registry_binding.close()?;
+	tempdir_for_workdir_binding.close()?;
 	Ok(())
 }
