@@ -6,14 +6,22 @@ edition = "2021"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 terminfo = "0.9.0"
-tracing = { version = "0.1.40", features = ["max_level_trace", "release_max_level_debug"] }
+tracing = { version = "0.1.40", features = [
+        "max_level_trace",
+        "release_max_level_debug",
+] }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
-libroast = "5.1"
+libroast = "^5"
+tempfile = "3.13.0"
+
+[[bin]]
+name = "home_registry"
+path = "src/main.rs"
 
 [lints.clippy]
 # Enable some groups of clippy lints.
-suspicious = "deny"
-perf = "deny"
+suspicious = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
 # Specific lints to enforce.
 todo = "warn"
 unimplemented = "deny"
@@ -29,11 +37,11 @@ unreachable = "allow"
 unit_arg = "allow"
 
 [profile.release]
-lto = true          # Enable Link Time Optimization.
-debug = true        # Include debug symbols. If you are going to complain for big binary sizes, there is a release-stripped option :P
-codegen-units = 8   # Default. Little gains if set to 1 so why bother?
-panic = 'abort'     # Abort on panic.
-strip = false       # Strip symbols from binary.
+lto = true        # Enable Link Time Optimization.
+debug = true      # Include debug symbols. If you are going to complain for big binary sizes, there is a release-stripped option :P
+codegen-units = 8 # Default. Little gains if set to 1 so why bother?
+panic = 'abort'   # Abort on panic.
+strip = false     # Strip symbols from binary.
 
 [profile.release-stripped]
 inherits = "release"
