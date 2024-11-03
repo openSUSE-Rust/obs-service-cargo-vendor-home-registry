@@ -1,21 +1,20 @@
 use crate::{audit, cli::HomeRegistryArgs};
 use libroast::{
-	common::{Compression, SupportedFormat},
+	common::Compression,
 	operations::{
 		cli::{RawArgs, RoastArgs},
 		raw::raw_opts,
 		roast::roast_opts,
 	},
-	utils::{self, copy_dir_all, is_supported_format, process_globs},
+	utils::{self, copy_dir_all, is_supported_format},
 };
 use std::{
-	fs, future, io,
+	fs, io,
 	path::{Path, PathBuf},
 };
 use tempfile;
 #[allow(unused_imports)]
 use tracing::{debug, error, info, trace, warn, Level};
-use tracing_subscriber::{fmt::format::Full, registry};
 
 pub fn cargo_command(
 	subcommand: &str,
@@ -90,7 +89,7 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		raw_opts(raw_args, false)?;
 	}
 
-	let setup_workdir = {
+	let mut setup_workdir = {
 		let dirs: Vec<Result<std::fs::DirEntry, std::io::Error>> =
 			std::fs::read_dir(workdir)?.collect();
 		debug!(?dirs, "List of files and directories of the workdir");
@@ -128,25 +127,48 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 			}
 		}
 	};
-	debug!(?setup_workdir);
-	info!("🔓Attempting to regenerate lockfile");
-	cargo_generate_lockfile(&setup_workdir, &home_registry_dot_cargo, "")?;
-	info!("🔒Regenerated lockfile");
-	info!("🚝 Attempting to fetch dependencies");
-	cargo_fetch(&setup_workdir, &home_registry_dot_cargo, "")?;
-	info!("💼 Fetched dependencies");
+	if let Some(custom_root) = &registry.custom_root {
+		setup_workdir.push(custom_root);
+	}
+	if registry.update {
+		info!("⏫ Updating dependencies...");
+		cargo_update(&setup_workdir, home_registry_dot_cargo, "")?;
+		info!("✅ Updated dependencies.");
+	}
+	info!(?setup_workdir, "🌳 Finished setting up workdir.");
+	info!("🔓Attempting to regenerate lockfile...");
+	cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "")?;
+	info!("🔒Regenerated lockfile.");
+	info!("🚝 Attempting to fetch dependencies.");
+	cargo_fetch(&setup_workdir, home_registry_dot_cargo, "")?;
+	info!("💼 Fetched dependencies.");
 	let mut lockfiles: Vec<PathBuf> = Vec::new();
 	for manifest in &registry.manifest_paths {
 		let full_manifest_path = &setup_workdir.join(manifest);
 		if full_manifest_path.is_file() {
+			if registry.update {
+				info!(?full_manifest_path, "⏫ Updating dependencies for extra manifest path...");
+				cargo_update(
+					&setup_workdir,
+					home_registry_dot_cargo,
+					&full_manifest_path.to_string_lossy(),
+				)?;
+				info!(?full_manifest_path, "✅ Updated dependencies for extra manifest path.");
+			}
+			info!(?full_manifest_path, "🔓Attempting to regenerate lockfile for extra manifest path...");
 			cargo_generate_lockfile(
 				&setup_workdir,
-				&home_registry_dot_cargo,
+				home_registry_dot_cargo,
 				&full_manifest_path.to_string_lossy(),
 			)?;
-			cargo_fetch(&setup_workdir, &home_registry_dot_cargo, &full_manifest_path.to_string_lossy())?;
+			info!(?full_manifest_path, "🔒Regenerated lockfile for extra manifest path.");
+			info!(?full_manifest_path, "🚝 Attempting to fetch dependencies at extra manifest path...");
+			cargo_fetch(&setup_workdir, home_registry_dot_cargo, &full_manifest_path.to_string_lossy())?;
+			info!(?full_manifest_path, "💼 Fetched dependencies for extra manifest path.");
 		} else {
-			return Err(io::Error::new(io::ErrorKind::NotFound, "Path to manifest is not a file"));
+			let err = io::Error::new(io::ErrorKind::NotFound, "Path to manifest is not a file");
+			error!(?err);
+			return Err(err);
 		}
 		let full_manifest_path_parent = full_manifest_path.parent().unwrap_or(&setup_workdir);
 		if full_manifest_path_parent.exists() {
@@ -159,7 +181,7 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 				let stripped_lockfile_path =
 					possible_lockfile.strip_prefix(&setup_workdir).unwrap_or(&possible_lockfile);
 				let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
-				let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(&home_registry);
+				let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
 				fs::create_dir_all(new_lockfile_parent)?;
 				fs::copy(&possible_lockfile, new_lockfile_path)?;
 				info!(?possible_lockfile, "🔒 🌟 Successfully added extra lockfile.");
@@ -174,16 +196,21 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 			"🔒 👀 Found the root lockfile. Adding it to home registry for vendoring."
 		);
 		let stripped_lockfile_path =
-			possible_root_lockfile.strip_prefix(&setup_workdir).unwrap_or(&possible_root_lockfile);
+			possible_root_lockfile.strip_prefix(&setup_workdir).unwrap_or(possible_root_lockfile);
 		let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
-		let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(&home_registry);
+		let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
 		fs::create_dir_all(new_lockfile_parent)?;
 		fs::copy(possible_root_lockfile, new_lockfile_path)?;
 		info!(?possible_root_lockfile, "🔒 🌟 Successfully added the root lockfile.");
 	}
 	lockfiles.push(possible_root_lockfile.to_path_buf());
 	info!("🛡️🫥 Auditing lockfiles...");
-	audit::perform_cargo_audit(&lockfiles, &registry.i_accept_the_risk).and_then(audit::process_reports)?;
+	if let Ok(audit_result) = audit::perform_cargo_audit(&lockfiles, &registry.i_accept_the_risk) {
+		audit::process_reports(audit_result).map_err(|err| {
+			error!(?err);
+			io::Error::new(io::ErrorKind::Interrupted, err.to_string())
+		})?;
+	}
 	info!("🛡️🙂 All lockfiles are audited");
 	info!("👉🏻🗑️ Removing unneeded directories");
 	let registry_src_dir = &home_registry_dot_cargo.join("registry").join("src");

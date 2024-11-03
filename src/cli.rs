@@ -22,4 +22,6 @@ pub struct HomeRegistryArgs {
 	pub i_accept_the_risk: Vec<String>,
 	#[arg(long, short = 'u', default_value_t = true)]
 	pub update: bool,
+	#[arg(long, short = 'C')]
+	pub custom_root: Option<String>
 }

@@ -29,7 +29,7 @@ use rustsec::{
 #[allow(unused_imports)]
 use tracing::{debug, error, info, trace, warn, Level};
 
-pub fn process_reports(reports: Vec<Report>) -> io::Result<()> {
+pub fn process_reports(reports: Vec<Report>) -> Result<(), io::Error> {
     let mut passed = true;
 
     // Now actually analyse the report.
