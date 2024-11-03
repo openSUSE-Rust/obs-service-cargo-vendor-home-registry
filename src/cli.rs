@@ -22,10 +22,10 @@ pub struct HomeRegistryArgs
 		        issue does not affect your package and you should be exempt from resolving it."
 	)]
 	pub i_accept_the_risk: Vec<String>,
-	#[arg(long, short = 'u', default_value_t = true)]
+	#[arg(long, short = 'u', default_value_t = true, action = clap::ArgAction::Set)]
 	pub update: bool,
 	#[arg(long, short = 'C')]
 	pub custom_root: Option<String>,
-	#[arg(long, short = 'N', default_value_t = false)]
+	#[arg(long, short = 'N', default_value_t = false, action = clap::ArgAction::Set)]
 	pub no_root_manifest: bool,
 }

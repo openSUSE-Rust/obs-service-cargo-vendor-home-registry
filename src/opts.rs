@@ -54,8 +54,8 @@ pub fn cargo_command(
 	let stderrput = String::from_utf8_lossy(&cmd.stderr);
 	if !cmd.status.success()
 	{
-		error!(?stdoutput);
-		error!(?stderrput);
+		debug!(?stdoutput);
+		debug!(?stderrput);
 		return Err(io::Error::new(io::ErrorKind::Interrupted, stderrput));
 	};
 	debug!(?stdoutput);
@@ -92,7 +92,22 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 		default_options.push("--manifest-path".to_string());
 		default_options.push(manifest.to_string());
 	}
-	cargo_command("generate-lockfile", &default_options, curdir)
+	let res = cargo_command("generate-lockfile", &default_options, curdir);
+	// NOTE: A generate-lockfile is equivalent to `cargo update`. I wonder why it is
+	// ambigious at times.
+	match res
+	{
+		Ok(ok) => Ok(ok),
+		Err(err) =>
+		{
+			debug!(?err);
+			warn!(
+				"A lockfile already exists. If you wish to respect the lockfile, consider not setting \
+				 `--update` to true."
+			);
+			Ok(err.to_string())
+		}
+	}
 }
 
 fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
