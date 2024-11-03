@@ -155,11 +155,14 @@ fn cargo_generate_lockfile(
 		Err(err) =>
 		{
 			debug!(?err);
-			warn!(
-				"⚠️ A lockfile already exists. If you wish to respect the lockfile, consider not setting \
-				 `--update` to true. However, this MIGHT FAIL in some cases."
-			);
-			info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
+			if !update
+			{
+				warn!(
+					"⚠️ A lockfile already exists. If you wish to respect the lockfile, consider not \
+					 setting `--update` to true. However, this MIGHT FAIL in some cases."
+				);
+				info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
+			}
 			Ok(err.to_string())
 		}
 	}
