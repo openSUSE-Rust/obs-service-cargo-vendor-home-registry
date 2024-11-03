@@ -9,7 +9,7 @@ pub struct HomeRegistryArgs
 	#[arg(
 		long,
 		short = 't',
-		visible_aliases = ["src"],
+		visible_aliases = ["src", "srctar", "srcdir"],
 		help = "Target source directory or tarball to vendor cargo home registry."
 	)]
 	pub target: PathBuf,
