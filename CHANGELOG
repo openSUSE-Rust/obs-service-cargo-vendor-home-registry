@@ -1,41 +1,4 @@
-Soc Virnyl Estela (36):
-      initial commit
-      add LICENCE (the correct spelling)
-      add derive feature for serde
-      changelog: add CHANGELOG.md and cliff.toml
-      misc: add justfile
-      misc: add rustfmt.toml. requires nightly
-      docs: update README with project description
-      misc: update rustfmt.toml
-      misc: initial implementation and idea
-      docs(fix): update README. fix bullet point
-      update CHANGELOG
-      yeet
-      restart from scratch
-      finalise some code
-      finalise some code
-      ready for testing
-      minor refactor
-      minor refactor
-      security: add ability to audit
-      add update and custom root flags
-      remove deadcode
-      feat: add no_root_manifest flag and custom_root flag
-      remove vendor.toml from scrapped idea
-      run cargo +nightly fmt
-      remove git-cliff
-      add CHANGELOG that's generated with git shortlog
-      always attempt to respect and assert lockfile as unchanged
-      improvements: do not regenerate a lockfile if it exists
-      improvements: setting `update` to true should not use `--locked` option
-      clippy: remove unused imports
-      cli: add help and improve text wrapping by adding wrap-help feature
-      improvements in using the --locked flags with update flag
-      add flag to ignore rust version
-      add more aliases
-      docs: add a section of what the specfile looks like
-      hide triple flag. it does not work. needs more investigation
-
-Soc Virnyl S. Estela (1):
-      Merge pull request #2 from openSUSE-Rust/20240821-rework-idea
+Soc Virnyl Estela (2):
+      change situation on when to warn when setting update to true or false
+      calculate hash of each lockfile to detect changes
 
