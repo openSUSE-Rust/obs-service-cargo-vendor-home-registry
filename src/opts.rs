@@ -105,15 +105,17 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 				"A lockfile already exists. If you wish to respect the lockfile, consider not setting \
 				 `--update` to true."
 			);
+			info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
 			Ok(err.to_string())
 		}
 	}
 }
 
+// Do not set `--locked` here. As explained in <https://doc.rust-lang.org/cargo/commands/cargo-update.html#manifest-options>
 fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
-	let mut default_options = vec!["--locked".to_string()];
+	let mut default_options = vec![];
 	if !manifest.is_empty()
 	{
 		default_options.push("--manifest-path".to_string());
