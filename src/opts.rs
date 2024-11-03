@@ -115,6 +115,7 @@ fn cargo_generate_lockfile(
 	cargo_home: &Path,
 	manifest: &str,
 	update: bool,
+	ignore_rust_version: bool,
 ) -> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
@@ -135,6 +136,10 @@ fn cargo_generate_lockfile(
 				 false to true."
 			);
 		}
+	}
+	if ignore_rust_version
+	{
+		default_options.push("--ignore-rust-version".to_string());
 	}
 	if !manifest.is_empty()
 	{
@@ -259,7 +264,13 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 		}
 		info!(?setup_workdir, "🌳 Finished setting up workdir.");
 		info!("🔓Attempting to regenerate lockfile...");
-		cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "", registry.update)?;
+		cargo_generate_lockfile(
+			&setup_workdir,
+			home_registry_dot_cargo,
+			"",
+			registry.update,
+			registry.ignore_rust_version,
+		)?;
 		info!("🔒Regenerated lockfile.");
 		info!("🚝 Attempting to fetch dependencies.");
 		cargo_fetch(&setup_workdir, home_registry_dot_cargo, "", registry.update)?;
@@ -288,6 +299,7 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 				home_registry_dot_cargo,
 				&full_manifest_path.to_string_lossy(),
 				registry.update,
+				registry.ignore_rust_version,
 			)?;
 			info!(?full_manifest_path, "🔒Regenerated lockfile for extra manifest path.");
 			info!(?full_manifest_path, "🚝 Attempting to fetch dependencies at extra manifest path...");

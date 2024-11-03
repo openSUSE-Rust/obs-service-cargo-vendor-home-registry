@@ -67,4 +67,11 @@ pub struct HomeRegistryArgs
     			See more in the following documentation - <https://doc.rust-lang.org/cargo/guide/build-cache.html>."
 	)]
 	pub triple: Vec<String>,
+	#[arg(
+		long,
+		short = 'R',
+		default_value_t = true,
+		action = clap::ArgAction::Set,
+		help = "Whether to pass the `--ignore-rust-version` flag when generating the lockfile.")]
+	pub ignore_rust_version: bool,
 }
