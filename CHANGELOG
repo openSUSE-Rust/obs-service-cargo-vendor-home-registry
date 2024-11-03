@@ -1,0 +1,30 @@
+Soc Virnyl Estela (25):
+      initial commit
+      add LICENCE (the correct spelling)
+      add derive feature for serde
+      changelog: add CHANGELOG.md and cliff.toml
+      misc: add justfile
+      misc: add rustfmt.toml. requires nightly
+      docs: update README with project description
+      misc: update rustfmt.toml
+      misc: initial implementation and idea
+      docs(fix): update README. fix bullet point
+      update CHANGELOG
+      yeet
+      restart from scratch
+      finalise some code
+      finalise some code
+      ready for testing
+      minor refactor
+      minor refactor
+      security: add ability to audit
+      add update and custom root flags
+      remove deadcode
+      feat: add no_root_manifest flag and custom_root flag
+      remove vendor.toml from scrapped idea
+      run cargo +nightly fmt
+      remove git-cliff
+
+Soc Virnyl S. Estela (1):
+      Merge pull request #2 from openSUSE-Rust/20240821-rework-idea
+
