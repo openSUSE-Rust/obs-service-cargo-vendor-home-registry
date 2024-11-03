@@ -1,27 +1,49 @@
-use crate::{audit, cli::HomeRegistryArgs};
+use crate::{
+	audit,
+	cli::HomeRegistryArgs,
+};
 use libroast::{
 	common::Compression,
 	operations::{
-		cli::{RawArgs, RoastArgs},
+		cli::{
+			RawArgs,
+			RoastArgs,
+		},
 		raw::raw_opts,
 		roast::roast_opts,
 	},
-	utils::{self, copy_dir_all, is_supported_format},
+	utils::{
+		self,
+		copy_dir_all,
+		is_supported_format,
+	},
 };
 use rustsec::registry;
 use std::{
-	fs, io,
-	path::{Path, PathBuf},
+	fs,
+	io,
+	path::{
+		Path,
+		PathBuf,
+	},
 };
 use tempfile;
 #[allow(unused_imports)]
-use tracing::{debug, error, info, trace, warn, Level};
+use tracing::{
+	debug,
+	error,
+	info,
+	trace,
+	warn,
+	Level,
+};
 
 pub fn cargo_command(
 	subcommand: &str,
 	options: &[String],
 	curdir: impl AsRef<Path>,
-) -> io::Result<String> {
+) -> io::Result<String>
+{
 	let cmd = std::process::Command::new("cargo")
 		.arg(subcommand)
 		.args(options.iter())
@@ -30,7 +52,8 @@ pub fn cargo_command(
 	trace!(?cmd);
 	let stdoutput = String::from_utf8_lossy(&cmd.stdout);
 	let stderrput = String::from_utf8_lossy(&cmd.stderr);
-	if !cmd.status.success() {
+	if !cmd.status.success()
+	{
 		error!(?stdoutput);
 		error!(?stderrput);
 		return Err(io::Error::new(io::ErrorKind::Interrupted, stderrput));
@@ -41,37 +64,44 @@ pub fn cargo_command(
 	Ok(stdoutput.to_string())
 }
 
-fn cargo_fetch(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String> {
+fn cargo_fetch(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
+{
 	std::env::set_var("CARGO_HOME", cargo_home);
 	let mut default_options = vec!["--locked".to_string()];
-	if !manifest.is_empty() {
+	if !manifest.is_empty()
+	{
 		default_options.push("--manifest-path".to_string());
 		default_options.push(manifest.to_string());
 	}
 	cargo_command("fetch", &default_options, curdir)
 }
 
-fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String> {
+fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
+{
 	std::env::set_var("CARGO_HOME", cargo_home);
 	let mut default_options = vec![];
-	if !manifest.is_empty() {
+	if !manifest.is_empty()
+	{
 		default_options.push("--manifest-path".to_string());
 		default_options.push(manifest.to_string());
 	}
 	cargo_command("generate-lockfile", &default_options, curdir)
 }
 
-fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String> {
+fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
+{
 	std::env::set_var("CARGO_HOME", cargo_home);
 	let mut default_options = vec![];
-	if !manifest.is_empty() {
+	if !manifest.is_empty()
+	{
 		default_options.push("--manifest-path".to_string());
 		default_options.push(manifest.to_string());
 	}
 	cargo_command("update", &default_options, curdir)
 }
 
-pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
+pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
+{
 	info!("🛖🏃📦 Starting Cargo Vendor Home Registry");
 	let tempdir_for_home_registry_binding =
 		tempfile::Builder::new().prefix(".cargo").rand_bytes(12).tempdir()?;
@@ -83,9 +113,12 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 	let workdir = &tempdir_for_workdir_binding.path();
 	debug!(?workdir);
 	let target = utils::process_globs(&registry.target)?;
-	if target.is_dir() {
+	if target.is_dir()
+	{
 		copy_dir_all(&target, workdir)?;
-	} else if target.is_file() && is_supported_format(&target).is_ok() {
+	}
+	else if target.is_file() && is_supported_format(&target).is_ok()
+	{
 		let raw_args = RawArgs { target: target.to_path_buf(), outdir: Some(workdir.to_path_buf()) };
 		raw_opts(raw_args, false)?;
 	}
@@ -94,18 +127,27 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		let dirs: Vec<Result<std::fs::DirEntry, std::io::Error>> =
 			std::fs::read_dir(workdir)?.collect();
 		debug!(?dirs, "List of files and directories of the workdir");
-		if dirs.len() > 1 {
+		if dirs.len() > 1
+		{
 			debug!(?workdir);
 			workdir.to_path_buf()
-		} else {
-			match dirs.into_iter().last() {
-				Some(p) => match p {
-					Ok(dir) => {
-						if dir.path().is_dir() {
+		}
+		else
+		{
+			match dirs.into_iter().last()
+			{
+				Some(p) => match p
+				{
+					Ok(dir) =>
+					{
+						if dir.path().is_dir()
+						{
 							debug!("{}", dir.path().display());
 							// NOTE: return new workdir
 							dir.path()
-						} else {
+						}
+						else
+						{
 							error!(
 								?dir,
 								"Tarball was extracted but got a file and not a possible top-level directory."
@@ -116,23 +158,28 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 							));
 						}
 					}
-					Err(err) => {
+					Err(err) =>
+					{
 						error!(?err, "Failed to read directory entry");
 						return Err(err);
 					}
 				},
-				None => {
+				None =>
+				{
 					error!("This should be unreachable here");
 					unreachable!();
 				}
 			}
 		}
 	};
-	if let Some(custom_root) = &registry.custom_root {
+	if let Some(custom_root) = &registry.custom_root
+	{
 		setup_workdir.push(custom_root);
 	}
-	if !registry.no_root_manifest {
-		if registry.update {
+	if !registry.no_root_manifest
+	{
+		if registry.update
+		{
 			info!("⏫ Updating dependencies...");
 			cargo_update(&setup_workdir, home_registry_dot_cargo, "")?;
 			info!("✅ Updated dependencies.");
@@ -146,10 +193,13 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		info!("💼 Fetched dependencies.");
 	}
 	let mut lockfiles: Vec<PathBuf> = Vec::new();
-	for manifest in &registry.manifest_paths {
+	for manifest in &registry.manifest_paths
+	{
 		let full_manifest_path = &setup_workdir.join(manifest);
-		if full_manifest_path.is_file() {
-			if registry.update {
+		if full_manifest_path.is_file()
+		{
+			if registry.update
+			{
 				info!(?full_manifest_path, "⏫ Updating dependencies for extra manifest path...");
 				cargo_update(
 					&setup_workdir,
@@ -168,15 +218,19 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 			info!(?full_manifest_path, "🚝 Attempting to fetch dependencies at extra manifest path...");
 			cargo_fetch(&setup_workdir, home_registry_dot_cargo, &full_manifest_path.to_string_lossy())?;
 			info!(?full_manifest_path, "💼 Fetched dependencies for extra manifest path.");
-		} else {
+		}
+		else
+		{
 			let err = io::Error::new(io::ErrorKind::NotFound, "Path to manifest is not a file");
 			error!(?err);
 			return Err(err);
 		}
 		let full_manifest_path_parent = full_manifest_path.parent().unwrap_or(&setup_workdir);
-		if full_manifest_path_parent.exists() {
+		if full_manifest_path_parent.exists()
+		{
 			let possible_lockfile = full_manifest_path_parent.join("Cargo.lock");
-			if possible_lockfile.exists() {
+			if possible_lockfile.exists()
+			{
 				info!(
 					?possible_lockfile,
 					"🔒 👀 Found an extra lockfile. Adding it to home registry for vendoring."
@@ -192,9 +246,11 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 			}
 		}
 	}
-	if !registry.no_root_manifest {
+	if !registry.no_root_manifest
+	{
 		let possible_root_lockfile = &setup_workdir.join("Cargo.lock");
-		if possible_root_lockfile.exists() {
+		if possible_root_lockfile.exists()
+		{
 			info!(
 				?possible_root_lockfile,
 				"🔒 👀 Found the root lockfile. Adding it to home registry for vendoring."
@@ -210,7 +266,8 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		lockfiles.push(possible_root_lockfile.to_path_buf());
 	}
 	info!("🛡️🫥 Auditing lockfiles...");
-	if let Ok(audit_result) = audit::perform_cargo_audit(&lockfiles, &registry.i_accept_the_risk) {
+	if let Ok(audit_result) = audit::perform_cargo_audit(&lockfiles, &registry.i_accept_the_risk)
+	{
 		audit::process_reports(audit_result).map_err(|err| {
 			error!(?err);
 			io::Error::new(io::ErrorKind::Interrupted, err.to_string())
@@ -221,30 +278,36 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 	let registry_src_dir = &home_registry_dot_cargo.join("registry").join("src");
 	let registry_bin_dir = &home_registry_dot_cargo.join("bin");
 	let registry_caches = [".global-cache", ".package-cache", ".package-cache-mutate"];
-	if registry_src_dir.exists() {
+	if registry_src_dir.exists()
+	{
 		info!("🚮 Removing {}", registry_src_dir.display());
 		fs::remove_dir_all(registry_src_dir)?;
 		info!("🤯 Removed {}", registry_src_dir.display());
 	}
-	if registry_bin_dir.exists() {
+	if registry_bin_dir.exists()
+	{
 		info!("🚮 Removing {}", registry_bin_dir.display());
 		fs::remove_dir_all(registry_bin_dir)?;
 		info!("🤯 Removed {}", registry_bin_dir.display());
 	}
-	for ca in registry_caches {
+	for ca in registry_caches
+	{
 		let cache = &home_registry_dot_cargo.join(ca);
-		if cache.exists() {
+		if cache.exists()
+		{
 			info!("🚮 Removing {}", cache.display());
 			fs::remove_file(cache)?;
 			info!("🤯 Removed {}", cache.display());
 		}
 	}
-	let outfile = match &registry.tag {
+	let outfile = match &registry.tag
+	{
 		Some(v) => format!("registry-{}", v),
 		None => "registry".to_string(),
 	};
 	let mut outfile = PathBuf::from(outfile);
-	let extension = match &registry.compression {
+	let extension = match &registry.compression
+	{
 		Compression::Gz => "tar.gz",
 		Compression::Xz => "tar.xz",
 		Compression::Zst => "tar.zst",
@@ -252,7 +315,8 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		Compression::Not => "tar",
 	};
 
-	if !outfile.set_extension(extension) {
+	if !outfile.set_extension(extension)
+	{
 		return Err(io::Error::new(io::ErrorKind::Other, "Unable to set extension"));
 	}
 	let roast_args = RoastArgs {
