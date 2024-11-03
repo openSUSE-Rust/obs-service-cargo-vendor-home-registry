@@ -15,7 +15,7 @@ libroast = "^5"
 tempfile = "3.13.0"
 
 [[bin]]
-name = "home_registry"
+name = "cargo_vendor_home_registry"
 path = "src/main.rs"
 
 [lints.clippy]
