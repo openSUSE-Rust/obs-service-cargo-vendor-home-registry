@@ -12,7 +12,6 @@ use libroast::{
 		raw::raw_opts,
 		roast::roast_opts,
 	},
-	utils,
 	utils::copy_dir_all,
 };
 use std::{
@@ -71,6 +70,7 @@ fn cargo_generate_lockfile(curdir: &Path) -> io::Result<String>
 
 pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 {
+	info!("🛖🏃📦 Starting Cargo Vendor Home Registry");
 	let tempdir_for_home_registry_binding =
 		tempfile::Builder::new().prefix(".cargo").rand_bytes(12).tempdir()?;
 	let home_registry_path = &tempdir_for_home_registry_binding.path();
@@ -182,5 +182,6 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 		ignore_hidden: false,
 	};
 	roast_opts(&roast_args, false)?;
+	info!("📦 Cargo Vendor Home Registry finished.");
 	Ok(())
 }
