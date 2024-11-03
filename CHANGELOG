@@ -1,4 +1,4 @@
-Soc Virnyl Estela (25):
+Soc Virnyl Estela (36):
       initial commit
       add LICENCE (the correct spelling)
       add derive feature for serde
@@ -24,6 +24,17 @@ Soc Virnyl Estela (25):
       remove vendor.toml from scrapped idea
       run cargo +nightly fmt
       remove git-cliff
+      add CHANGELOG that's generated with git shortlog
+      always attempt to respect and assert lockfile as unchanged
+      improvements: do not regenerate a lockfile if it exists
+      improvements: setting `update` to true should not use `--locked` option
+      clippy: remove unused imports
+      cli: add help and improve text wrapping by adding wrap-help feature
+      improvements in using the --locked flags with update flag
+      add flag to ignore rust version
+      add more aliases
+      docs: add a section of what the specfile looks like
+      hide triple flag. it does not work. needs more investigation
 
 Soc Virnyl S. Estela (1):
       Merge pull request #2 from openSUSE-Rust/20240821-rework-idea
