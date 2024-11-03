@@ -1,4 +1,3 @@
-Soc Virnyl Estela (2):
-      change situation on when to warn when setting update to true or false
-      calculate hash of each lockfile to detect changes
+Soc Virnyl Estela (1):
+      properly cleanup temporary directories
 

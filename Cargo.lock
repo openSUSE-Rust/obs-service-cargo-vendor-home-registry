@@ -1838,7 +1838,7 @@ dependencies = [
 
 [[package]]
 name = "obs-service-cargo-vendor-home-registry"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "clap",
  "hex",
