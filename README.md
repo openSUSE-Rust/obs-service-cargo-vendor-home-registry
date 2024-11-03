@@ -48,6 +48,31 @@ multiple registry contexts.  However, that I still yet to find any.
 in the tarball. Therefore, updated lockfiles are also shipped without worrying
 if you have mismatching dependencies.
 
+# How to use in a specfile
+
+A typical specfile looks like this
+
+```
+
+%prep
+%autosetup -a1
+
+%build
+export CARGO_HOME=$PWD/.cargo
+%{cargo_build}
+
+%install
+export CARGO_HOME=$PWD/.cargo
+%{cargo_install}
+
+%check
+export CARGO_HOME=$PWD/.cargo
+%{cargo_test}
+
+
+```
+
+
 # Q&A
 
 For questions and answers, you can head over to our
