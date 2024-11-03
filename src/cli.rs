@@ -60,9 +60,11 @@ pub struct HomeRegistryArgs
 		help = "If a project has no root manifest, this flag is useful for those situations to set \
     			the manifest path manually. Useful in combination with `--manifest-paths` flag.")]
 	pub no_root_manifest: bool,
+	// NOTE: Hide this flag as it seems it's not working. Probably need to open an issue upstream.
 	#[arg(
 		long,
 		short = 'a',
+		hide = true,
 		help = "Specify target triple. You can check out the list by running `rustc --print target-list`. \
     			See more in the following documentation - <https://doc.rust-lang.org/cargo/guide/build-cache.html>."
 	)]
