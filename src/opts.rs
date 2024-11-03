@@ -1,43 +1,26 @@
 use crate::cli::HomeRegistryArgs;
 use libroast::{
-	common::{
-		Compression,
-		SupportedFormat,
-	},
+	common::{Compression, SupportedFormat},
 	operations::{
-		cli::{
-			RawArgs,
-			RoastArgs,
-		},
+		cli::{RawArgs, RoastArgs},
 		raw::raw_opts,
 		roast::roast_opts,
 	},
-	utils::copy_dir_all,
+	utils::{copy_dir_all, is_supported_format, process_globs},
 };
 use std::{
-	io,
-	path::{
-		Path,
-		PathBuf,
-	},
+	fs, io,
+	path::{Path, PathBuf},
 };
 use tempfile;
 #[allow(unused_imports)]
-use tracing::{
-	debug,
-	error,
-	info,
-	trace,
-	warn,
-	Level,
-};
+use tracing::{debug, error, info, trace, warn, Level};
 
 pub fn cargo_command(
 	subcommand: &str,
 	options: &[String],
 	curdir: impl AsRef<Path>,
-) -> io::Result<String>
-{
+) -> io::Result<String> {
 	let cmd = std::process::Command::new("cargo")
 		.arg(subcommand)
 		.args(options.iter())
@@ -46,8 +29,7 @@ pub fn cargo_command(
 	trace!(?cmd);
 	let stdoutput = String::from_utf8_lossy(&cmd.stdout);
 	let stderrput = String::from_utf8_lossy(&cmd.stderr);
-	if !cmd.status.success()
-	{
+	if !cmd.status.success() {
 		error!(?stdoutput);
 		error!(?stderrput);
 		return Err(io::Error::new(io::ErrorKind::Interrupted, stderrput));
@@ -58,18 +40,15 @@ pub fn cargo_command(
 	Ok(stdoutput.to_string())
 }
 
-fn cargo_fetch(curdir: &Path) -> io::Result<String>
-{
+fn cargo_fetch(curdir: &Path) -> io::Result<String> {
 	cargo_command("fetch", &["--locked".to_string()], curdir)
 }
 
-fn cargo_generate_lockfile(curdir: &Path) -> io::Result<String>
-{
+fn cargo_generate_lockfile(curdir: &Path) -> io::Result<String> {
 	cargo_command("generate-lockfile", &[], curdir)
 }
 
-pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
-{
+pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 	info!("🛖🏃📦 Starting Cargo Vendor Home Registry");
 	let tempdir_for_home_registry_binding =
 		tempfile::Builder::new().prefix(".cargo").rand_bytes(12).tempdir()?;
@@ -81,47 +60,30 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 		tempfile::Builder::new().prefix(".workdir").rand_bytes(12).tempdir()?;
 	let workdir = &tempdir_for_workdir_binding.path();
 	debug!(?workdir);
-	let source = libroast::utils::is_supported_format(&registry.target).map_err(|err| {
-		error!(?err);
-		io::Error::new(io::ErrorKind::InvalidData, err.to_string())
-	})?;
-	match source
-	{
-		SupportedFormat::Compressed(_, source_path) =>
-		{
-			let raw_args = RawArgs { target: source_path, outdir: Some(workdir.to_path_buf()) };
-			raw_opts(raw_args, false)?;
-		}
-		SupportedFormat::Dir(source_path) =>
-		{
-			copy_dir_all(&source_path, workdir)?;
-		}
+	if registry.target.is_dir() {
+		copy_dir_all(&registry.target, workdir)?;
+	} else if registry.target.is_file() && is_supported_format(&registry.target).is_ok() {
+		let raw_args =
+			RawArgs { target: registry.target.to_path_buf(), outdir: Some(workdir.to_path_buf()) };
+		raw_opts(raw_args, false)?;
 	}
+
 	let setup_workdir = {
 		let dirs: Vec<Result<std::fs::DirEntry, std::io::Error>> =
 			std::fs::read_dir(workdir)?.collect();
 		debug!(?dirs, "List of files and directories of the workdir");
-		if dirs.len() > 1
-		{
+		if dirs.len() > 1 {
 			debug!(?workdir);
 			workdir.to_path_buf()
-		}
-		else
-		{
-			match dirs.into_iter().last()
-			{
-				Some(p) => match p
-				{
-					Ok(dir) =>
-					{
-						if dir.path().is_dir()
-						{
+		} else {
+			match dirs.into_iter().last() {
+				Some(p) => match p {
+					Ok(dir) => {
+						if dir.path().is_dir() {
 							debug!("{}", dir.path().display());
 							// NOTE: return new workdir
 							dir.path()
-						}
-						else
-						{
+						} else {
 							error!(
 								?dir,
 								"Tarball was extracted but got a file and not a possible top-level directory."
@@ -132,14 +94,12 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 							));
 						}
 					}
-					Err(err) =>
-					{
+					Err(err) => {
 						error!(?err, "Failed to read directory entry");
 						return Err(err);
 					}
 				},
-				None =>
-				{
+				None => {
 					error!("This should be unreachable here");
 					unreachable!();
 				}
@@ -150,14 +110,34 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 
 	cargo_generate_lockfile(&setup_workdir)?;
 	cargo_fetch(&setup_workdir)?;
-	let outfile = match &registry.tag
-	{
+	info!("👉🏻🗑️ Removing unneeded directories");
+	let registry_src_dir = &home_registry_path.join("registry").join("src");
+	let registry_bin_dir = &home_registry_path.join("bin");
+	let registry_caches = [".global-cache", ".package-cache", ".package-cache-mutate"];
+	if registry_src_dir.exists() {
+		info!("🚮 Removing {}", registry_src_dir.display());
+		fs::remove_dir_all(registry_src_dir)?;
+		info!("🤯 Removed {}", registry_src_dir.display());
+	}
+	if registry_bin_dir.exists() {
+		info!("🚮 Removing {}", registry_bin_dir.display());
+		fs::remove_dir_all(registry_bin_dir)?;
+		info!("🤯 Removed {}", registry_bin_dir.display());
+	}
+	// for ca in registry_caches {
+	// 	let cache = &home_registry_path.join(ca);
+	// 	if cache.exists() {
+	// 		info!("🚮 Removing {}", cache.display());
+	// 		fs::remove_file(cache)?;
+	// 		info!("🤯 Removed {}", cache.display());
+	// 	}
+	// }
+	let outfile = match &registry.tag {
 		Some(v) => format!("registry-{}", v),
 		None => "registry".to_string(),
 	};
 	let mut outfile = PathBuf::from(outfile);
-	let extension = match &registry.compression
-	{
+	let extension = match &registry.compression {
 		Compression::Gz => "tar.gz",
 		Compression::Xz => "tar.xz",
 		Compression::Zst => "tar.zst",
@@ -165,8 +145,7 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 		Compression::Not => "tar",
 	};
 
-	if !outfile.set_extension(extension)
-	{
+	if !outfile.set_extension(extension) {
 		return Err(io::Error::new(io::ErrorKind::Other, "Unable to set extension"));
 	}
 	let roast_args = RoastArgs {
