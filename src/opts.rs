@@ -63,28 +63,78 @@ pub fn cargo_command(
 	Ok(stdoutput.to_string())
 }
 
-fn cargo_fetch(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
+fn cargo_fetch(curdir: &Path, cargo_home: &Path, manifest: &str, update: bool)
+	-> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
-	let mut default_options = vec!["--locked".to_string()];
+	let mut default_options: Vec<String> = vec![];
+	let manifest_path = PathBuf::from(&manifest);
+	let manifest_path_parent = manifest_path.parent().unwrap_or(curdir);
+	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
+	if !update
+	{
+		if possible_lockfile.is_file()
+		{
+			default_options.push("--locked".to_string());
+		}
+		else
+		{
+			warn!(
+				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
+				 false to true."
+			);
+		}
+	}
 	if !manifest.is_empty()
 	{
 		default_options.push("--manifest-path".to_string());
 		default_options.push(manifest.to_string());
 	}
-	cargo_command("fetch", &default_options, curdir)
+	let res = cargo_command("fetch", &default_options, curdir);
+	match res
+	{
+		Ok(ok) => Ok(ok),
+		Err(err) =>
+		{
+			debug!(?err);
+			error!(
+				"🛑 The lockfile needs to be updated. This operation will fail. Please set the setting \
+				 `--update` to true."
+			);
+			error!(
+				?possible_lockfile,
+				"❌ 🔒 Lockfile was not regenerated for and needs update. Aborting gracefully..."
+			);
+			Err(err)
+		}
+	}
 }
 
-fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<String>
+fn cargo_generate_lockfile(
+	curdir: &Path,
+	cargo_home: &Path,
+	manifest: &str,
+	update: bool,
+) -> io::Result<String>
 {
 	std::env::set_var("CARGO_HOME", cargo_home);
-	let mut default_options = vec![];
+	let mut default_options: Vec<String> = vec![];
 	let manifest_path = PathBuf::from(&manifest);
 	let manifest_path_parent = manifest_path.parent().unwrap_or(curdir);
 	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
-	if possible_lockfile.is_file()
+	if !update
 	{
-		default_options.push("--locked".to_string());
+		if possible_lockfile.is_file()
+		{
+			default_options.push("--locked".to_string());
+		}
+		else
+		{
+			warn!(
+				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
+				 false to true."
+			);
+		}
 	}
 	if !manifest.is_empty()
 	{
@@ -93,7 +143,7 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 	}
 	let res = cargo_command("generate-lockfile", &default_options, curdir);
 	// NOTE: A generate-lockfile is equivalent to `cargo update`. I wonder why it is
-	// ambigious at times.
+	// ambigious. I probably need to open an issue to cargo upstream.
 	match res
 	{
 		Ok(ok) => Ok(ok),
@@ -101,8 +151,8 @@ fn cargo_generate_lockfile(curdir: &Path, cargo_home: &Path, manifest: &str) -> 
 		{
 			debug!(?err);
 			warn!(
-				"A lockfile already exists. If you wish to respect the lockfile, consider not setting \
-				 `--update` to true."
+				"⚠️ A lockfile already exists. If you wish to respect the lockfile, consider not setting \
+				 `--update` to true. However, this MIGHT FAIL in some cases."
 			);
 			info!("🔒 Lockfile was not regenerated for `{}`", possible_lockfile.display());
 			Ok(err.to_string())
@@ -209,23 +259,24 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 		}
 		info!(?setup_workdir, "🌳 Finished setting up workdir.");
 		info!("🔓Attempting to regenerate lockfile...");
-		cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "")?;
+		cargo_generate_lockfile(&setup_workdir, home_registry_dot_cargo, "", registry.update)?;
 		info!("🔒Regenerated lockfile.");
 		info!("🚝 Attempting to fetch dependencies.");
-		cargo_fetch(&setup_workdir, home_registry_dot_cargo, "")?;
+		cargo_fetch(&setup_workdir, home_registry_dot_cargo, "", registry.update)?;
 		info!("💼 Fetched dependencies.");
 	}
 	let mut lockfiles: Vec<PathBuf> = Vec::new();
 	for manifest in &registry.manifest_paths
 	{
 		let full_manifest_path = &setup_workdir.join(manifest);
+		let full_manifest_path_parent = full_manifest_path.parent().unwrap_or(&setup_workdir);
 		if full_manifest_path.is_file()
 		{
 			if registry.update
 			{
 				info!(?full_manifest_path, "⏫ Updating dependencies for extra manifest path...");
 				cargo_update(
-					&setup_workdir,
+					full_manifest_path_parent,
 					home_registry_dot_cargo,
 					&full_manifest_path.to_string_lossy(),
 				)?;
@@ -233,13 +284,19 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 			}
 			info!(?full_manifest_path, "🔓Attempting to regenerate lockfile for extra manifest path...");
 			cargo_generate_lockfile(
-				&setup_workdir,
+				full_manifest_path_parent,
 				home_registry_dot_cargo,
 				&full_manifest_path.to_string_lossy(),
+				registry.update,
 			)?;
 			info!(?full_manifest_path, "🔒Regenerated lockfile for extra manifest path.");
 			info!(?full_manifest_path, "🚝 Attempting to fetch dependencies at extra manifest path...");
-			cargo_fetch(&setup_workdir, home_registry_dot_cargo, &full_manifest_path.to_string_lossy())?;
+			cargo_fetch(
+				&setup_workdir,
+				home_registry_dot_cargo,
+				&full_manifest_path.to_string_lossy(),
+				registry.update,
+			)?;
 			info!(?full_manifest_path, "💼 Fetched dependencies for extra manifest path.");
 		}
 		else
@@ -248,25 +305,21 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 			error!(?err);
 			return Err(err);
 		}
-		let full_manifest_path_parent = full_manifest_path.parent().unwrap_or(&setup_workdir);
-		if full_manifest_path_parent.exists()
+		let possible_lockfile = full_manifest_path_parent.join("Cargo.lock");
+		if possible_lockfile.exists()
 		{
-			let possible_lockfile = full_manifest_path_parent.join("Cargo.lock");
-			if possible_lockfile.exists()
-			{
-				info!(
-					?possible_lockfile,
-					"🔒 👀 Found an extra lockfile. Adding it to home registry for vendoring."
-				);
-				let stripped_lockfile_path =
-					possible_lockfile.strip_prefix(&setup_workdir).unwrap_or(&possible_lockfile);
-				let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
-				let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
-				fs::create_dir_all(new_lockfile_parent)?;
-				fs::copy(&possible_lockfile, new_lockfile_path)?;
-				info!(?possible_lockfile, "🔒 🌟 Successfully added extra lockfile.");
-				lockfiles.push(possible_lockfile.to_path_buf());
-			}
+			info!(
+				?possible_lockfile,
+				"🔒 👀 Found an extra lockfile. Adding it to home registry for vendoring."
+			);
+			let stripped_lockfile_path =
+				possible_lockfile.strip_prefix(&setup_workdir).unwrap_or(&possible_lockfile);
+			let new_lockfile_path = &home_registry.join(stripped_lockfile_path);
+			let new_lockfile_parent = new_lockfile_path.parent().unwrap_or(home_registry);
+			fs::create_dir_all(new_lockfile_parent)?;
+			fs::copy(&possible_lockfile, new_lockfile_path)?;
+			info!(?possible_lockfile, "🔒 🌟 Successfully added extra lockfile.");
+			lockfiles.push(possible_lockfile.to_path_buf());
 		}
 	}
 	if !registry.no_root_manifest

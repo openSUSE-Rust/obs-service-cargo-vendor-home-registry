@@ -13,27 +13,23 @@ pub struct HomeRegistryArgs
 		help = "Target source directory or tarball to vendor cargo home registry."
 	)]
 	pub target: PathBuf,
-	#[arg(
-		long,
-		value_enum,
-		short = 'c',
-    		default_value_t,
-		help = "Set what compression to use.")]
+	#[arg(long, value_enum, short = 'c', default_value_t, help = "Set what compression to use.")]
 	pub compression: Compression,
 	#[arg(
 		long,
 		short = 'T',
-		help = "Whether to add a tag after the name \"registry\" appended with a \"-\". Useful if you plan to set `CARGO_HOME` in different contexts.")]
+		help = "Whether to add a tag after the name \"registry\" appended with a \"-\". Useful if you \
+		        plan to set `CARGO_HOME` in different contexts."
+	)]
 	pub tag: Option<String>,
-	#[arg(
-		long,
-		short = 'd',
-		help = "Directory to put where the vendored registry home tarball.")]
+	#[arg(long, short = 'd', help = "Directory to put where the vendored registry home tarball.")]
 	pub outdir: PathBuf,
 	#[arg(
 		long,
 		short = 'm',
-		help = "Additional manifests paths. Good if you want to use other manifest paths and if you explicitly set `--no_root_manifest`.")]
+		help = "Additional manifests paths. Good if you want to use other manifest paths and if you \
+		        explicitly set `--no_root_manifest`."
+	)]
 	pub manifest_paths: Vec<PathBuf>,
 	#[arg(
 		long,
@@ -52,7 +48,9 @@ pub struct HomeRegistryArgs
 	#[arg(
 		long,
 		short = 'C',
-		help = "Whether you want to manually set the root of the project. Useful with a combination with `--manifest-paths` or `--no-root-manifest`.")]
+		help = "Whether you want to manually set the root of the project. Useful with a combination \
+		        with `--manifest-paths` or `--no-root-manifest`."
+	)]
 	pub custom_root: Option<String>,
 	#[arg(
 		long,
@@ -67,6 +65,6 @@ pub struct HomeRegistryArgs
 		short = 'a',
 		help = "Specify target triple. You can check out the list by running `rustc --print target-list`. \
     			See more in the following documentation - <https://doc.rust-lang.org/cargo/guide/build-cache.html>."
-		)]
-        pub triple: Vec<String>
+	)]
+	pub triple: Vec<String>,
 }
