@@ -19,50 +19,36 @@ The goals of this project are
 ├── Cargo.toml
 ├── CHANGELOG.md
 ├── cliff.toml
+├── justfile
 ├── LICENCE
 ├── README.md
-└── src
-    ├── cli.rs
-    ├── compress.rs
-    ├── decompress.rs
-    ├── lib.rs
-    ├── main.rs
-    └── opts.rs
+├── rustfmt.toml
+├── src
+│   ├── audit.rs
+│   ├── cli.rs
+│   ├── lib.rs
+│   ├── main.rs
+│   └── opts.rs
+└── vendor.toml
 
-2 directories, 12 files
+2 directories, 14 files
 ```
 
-## Features
+# Features
+- Allow custom root directory of the project if in case the "dumb" detection
+fails.
+- Allow option to set no root manifest. Packages such as `s390-tools` do
+not have a root manifest as it is a **monorepo**. It's not even a [cargo
+workspace](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html).
+However, users must manually add the path to the extra manifests if needed
+relative to project top-level directory.
+- Tag support. Like `obs-service-cargo`, we support tags so you can have
+multiple registry contexts.  However, that I still yet to find any.
+- No need to set `respect-lockfiles`. Lockfiles are regenerated and shipped
+in the tarball. Therefore, updated lockfiles are also shipped without worrying
+if you have mismatching dependencies.
 
-Introducing *manifest_options*. This option allows users to finely-tune
-cargo options for a specified manifest/crate path. For example, if user
-wants to update crate A, they can do so with `--manifest-options crateA,true`
-but they want to leave B alone so `--manifest-options crateB,false`.
+# Q&A
 
-> [!NOTE]
-> This is pretty handy if users want to set each crate manually. The default
-update option for all crates though is true. One can set a flag to disable
-update using `--lockfile-all` flag for all crates.
-
-### About `respect-lockfile`
-
-*respect-lockfile* is now part of *manifest_options*. How to use it?
-
-It will be just a simple third option in the *manifest_option* i.e. `--manifest-options cratePath,false,true`
-
-*respect-lockfile* will always supersede *update* option if set to `true`.
-
-When a crate does not have a lockfile at all. We will be warning the users
-that if such a case arises, we will force generate the lockfile using `cargo
-update` with the following scenarios
-- if network connection exists, attempt to just run `cargo update` normally;
-otherwise
-- add the `--offline` option
-
-If the lockfile exists or regenerated (because it didn't exist at first),
-we will add a `--locked` option when attempting to `cargo fetch`.
-
-## Workspace crates
-
-## Working with multiple unrelated crates
-
+For questions and answers, you can head over to our
+[Discussion](https://github.com/orgs/openSUSE-Rust/discussions) page on GitHub.

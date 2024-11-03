@@ -1,4 +1,3 @@
+pub mod audit;
 pub mod cli;
-mod compress;
-mod decompress;
-mod opts;
+pub mod opts;
