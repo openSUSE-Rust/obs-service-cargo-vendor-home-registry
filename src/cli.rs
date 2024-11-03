@@ -6,7 +6,7 @@ use std::path::PathBuf;
 #[command(version, author, name = "cargo vendor home registry")]
 pub struct HomeRegistryArgs
 {
-	#[arg(long, short = 't')]
+	#[arg(long, short = 't', visible_aliases = ["src"])]
 	pub target: PathBuf,
 	#[arg(long, value_enum, short = 'c', default_value_t)]
 	pub compression: Compression,

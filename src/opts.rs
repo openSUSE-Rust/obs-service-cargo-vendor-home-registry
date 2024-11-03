@@ -6,8 +6,9 @@ use libroast::{
 		raw::raw_opts,
 		roast::roast_opts,
 	},
-	utils::{copy_dir_all, is_supported_format, process_globs},
+	utils::{self, copy_dir_all, is_supported_format, process_globs},
 };
+use tracing_subscriber::registry;
 use std::{
 	fs, io,
 	path::{Path, PathBuf},
@@ -60,11 +61,12 @@ pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()> {
 		tempfile::Builder::new().prefix(".workdir").rand_bytes(12).tempdir()?;
 	let workdir = &tempdir_for_workdir_binding.path();
 	debug!(?workdir);
-	if registry.target.is_dir() {
-		copy_dir_all(&registry.target, workdir)?;
-	} else if registry.target.is_file() && is_supported_format(&registry.target).is_ok() {
+	let target = utils::process_globs(&registry.target)?;
+	if target.is_dir() {
+		copy_dir_all(&target, workdir)?;
+	} else if target.is_file() && is_supported_format(&target).is_ok() {
 		let raw_args =
-			RawArgs { target: registry.target.to_path_buf(), outdir: Some(workdir.to_path_buf()) };
+			RawArgs { target: target.to_path_buf(), outdir: Some(workdir.to_path_buf()) };
 		raw_opts(raw_args, false)?;
 	}
 
