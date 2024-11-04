@@ -34,4 +34,5 @@ jobs:
     - name: Tests
       run: |
         export CC=clang
-        cargo test
+        export RUST_LOG=debug
+        cargo t
