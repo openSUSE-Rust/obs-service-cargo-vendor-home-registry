@@ -1,15 +1,6 @@
-Soc Virnyl Estela (13):
-      add service file
-      improvements in the service file
-      add COC and CONTRIBUTING and CONTRIBUTORS
-      update README
-      add these two. knowledge i gained from this project (and some code copied over) and help from other projects came from them
-      prepare tests
-      prepare ci workflow
-      chore: update Cargo.lock and Cargo.toml
-      ci: add openssl-devel as dependency
-      chore: update CHANGELOG
-      ci: add rustup and set rust version to stable
-      chore: update CHANGELOG
-      ci: add clang
+Soc Virnyl Estela (4):
+      misc: some changes on Cargo.toml and CI
+      add cool badges [ci skip]
+      just put CI [ci skip]
+      hide ignore-rust-version flag
 

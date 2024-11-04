@@ -72,9 +72,9 @@ pub struct HomeRegistryArgs
 	#[arg(
 		long,
 		short = 'R',
-		default_value_t = true,
+		default_value_t = false,
 		action = clap::ArgAction::Set,
 		hide = true,
 		help = "Whether to pass the `--ignore-rust-version` flag when generating the lockfile.")]
-	pub ignore_rust_version: false,
+	pub ignore_rust_version: bool,
 }
