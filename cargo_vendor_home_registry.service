@@ -21,6 +21,11 @@
    </parameter>
    <parameter name="compression">
       <description>What compression algorithm to use. Set to `not` if you just want a normal tarball with no compression. Default: zst</description>
+      <allowedvalues>zst</allowedvalues>
+      <allowedvalues>gz</allowedvalues>
+      <allowedvalues>xz</allowedvalues>
+      <allowedvalues>bz2</allowedvalues>
+      <allowedvalues>not</allowedvalues>
    </parameter>
    <parameter name="manifest-paths">
       <description>Additional manifests paths.</description>
