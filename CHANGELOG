@@ -1,4 +1,4 @@
-Soc Virnyl Estela (7):
+Soc Virnyl Estela (9):
       add service file
       improvements in the service file
       add COC and CONTRIBUTING and CONTRIBUTORS
@@ -6,4 +6,6 @@ Soc Virnyl Estela (7):
       add these two. knowledge i gained from this project (and some code copied over) and help from other projects came from them
       prepare tests
       prepare ci workflow
+      chore: update Cargo.lock and Cargo.toml
+      ci: add openssl-devel as dependency
 
