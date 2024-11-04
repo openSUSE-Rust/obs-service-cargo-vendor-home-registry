@@ -88,7 +88,7 @@ fn cargo_fetch(
 		else
 		{
 			warn!(
-				"⚠️ No lockfile present. This might UPDATE your dependency. Overriding `update` from \
+				"⚠️ No lockfile present. This might UPDATE your dependencies. Overriding `update` from \
 				 false to true."
 			);
 			update = true;
@@ -140,6 +140,7 @@ fn cargo_generate_lockfile(
 	let possible_lockfile = manifest_path_parent.join("Cargo.lock");
 	if !update
 	{
+		warn!("😥 Disabled update of dependencies. You should enable this for security updates.");
 		if possible_lockfile.is_file()
 		{
 			default_options.push("--locked".to_string());
@@ -185,7 +186,10 @@ fn cargo_generate_lockfile(
 		);
 		if has_update_value_changed && update
 		{
-			warn!("⚠️ There was no lockfile present. Your dependencies MIGHT have updated.");
+			warn!(
+				"⚠️ Update was SET from FALSE to TRUE , hence a NEW LOCKFILE was CREATED since there was \
+				 NO LOCKFILE prior. Your dependencies MIGHT have updated."
+			);
 		}
 	}
 	else
@@ -194,8 +198,6 @@ fn cargo_generate_lockfile(
 		info!("Previous hash: {}", hash1);
 		info!("New hash: {}", hash2);
 	}
-	// NOTE: A generate-lockfile is equivalent to `cargo update`. I wonder why it is
-	// ambigious. I probably need to open an issue to cargo upstream.
 	match res
 	{
 		Ok(ok) => Ok(ok),
@@ -222,6 +224,7 @@ fn cargo_update(curdir: &Path, cargo_home: &Path, manifest: &str) -> io::Result<
 
 pub fn run_vendor_home_registry(registry: &HomeRegistryArgs) -> io::Result<()>
 {
+	debug!(?registry);
 	info!("🛖🏃📦 Starting Cargo Vendor Home Registry");
 	let tempdir_for_home_registry_binding =
 		tempfile::Builder::new().prefix(".cargo").rand_bytes(12).tempdir()?;
