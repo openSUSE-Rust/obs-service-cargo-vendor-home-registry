@@ -39,7 +39,7 @@ fn cargo_vendor_home_registry_cargo_vendor_home_registry() -> io::Result<()>
 		custom_root: None,
 		no_root_manifest: false,
 		triple: vec![],
-		ignore_rust_version: true,
+		ignore_rust_version: false,
 	};
 
 	let res = run_vendor_home_registry(&registry);
@@ -115,7 +115,7 @@ async fn monorepo_test_1() -> io::Result<()>
 		custom_root: None,
 		no_root_manifest: true,
 		triple: vec![],
-		ignore_rust_version: true,
+		ignore_rust_version: false,
 	};
 	let res = run_vendor_home_registry(&registry);
 	if res.is_err()
@@ -184,7 +184,7 @@ async fn vendor_home_registry_source(source: &str) -> io::Result<()>
 		custom_root: None,
 		no_root_manifest: false,
 		triple: vec![],
-		ignore_rust_version: true,
+		ignore_rust_version: false,
 	};
 	let res = run_vendor_home_registry(&registry);
 	if res.is_err()
