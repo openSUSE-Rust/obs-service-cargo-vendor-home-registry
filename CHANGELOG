@@ -1,4 +1,4 @@
-Soc Virnyl Estela (9):
+Soc Virnyl Estela (11):
       add service file
       improvements in the service file
       add COC and CONTRIBUTING and CONTRIBUTORS
@@ -8,4 +8,6 @@ Soc Virnyl Estela (9):
       prepare ci workflow
       chore: update Cargo.lock and Cargo.toml
       ci: add openssl-devel as dependency
+      chore: update CHANGELOG
+      ci: add rustup and set rust version to stable
 
