@@ -1,6 +1,7 @@
-Soc Virnyl Estela (4):
+Soc Virnyl Estela (5):
       misc: some changes on Cargo.toml and CI
       add cool badges [ci skip]
       just put CI [ci skip]
       hide ignore-rust-version flag
+      fix: remove/hide ignore-rust-version flag as this is a nightly feature.
 
