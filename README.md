@@ -1,6 +1,6 @@
 # OBS Service Cargo Vendor Home Registry
 
-[![CI for Cargo Vendor Home Registry](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml/badge.svg)](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml)
+[![CI](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml/badge.svg)](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml)
 [![build result](https://build.opensuse.org/projects/devel:languages:rust/packages/obs-service-cargo-vendor-home-registry/badge.svg?type=percent)](https://build.opensuse.org/package/show/devel:languages:rust/obs-service-cargo-vendor-home-registry)
 
 A rewrite of the [OBS Service Cargo Vendor](https://github.com/Firstyear/obs-service-cargo/).
