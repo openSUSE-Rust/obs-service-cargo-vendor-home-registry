@@ -36,9 +36,6 @@
    <parameter name="no-root-manifest">
       <description>If a project has no root manifest, this flag is useful for those situations to set the manifest path manually</description>
    </parameter>
-   <parameter name="ignore-rust-version">
-      <description>Whether to pass the `--ignore-rust-version` flag when generating the lockfile.</description>
-   </parameter>
    <parameter name="custom-root>
       <description>Whether you want to manually set the root of the project.</description>
    </parameter>
