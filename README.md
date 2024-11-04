@@ -17,21 +17,23 @@ The goals of this project are
 .
 ├── Cargo.lock
 ├── Cargo.toml
-├── CHANGELOG.md
-├── cliff.toml
+├── cargo_vendor_home_registry.service
+├── CHANGELOG
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── CONTRIBUTORS.md
 ├── justfile
 ├── LICENCE
 ├── README.md
 ├── rustfmt.toml
-├── src
-│   ├── audit.rs
-│   ├── cli.rs
-│   ├── lib.rs
-│   ├── main.rs
-│   └── opts.rs
-└── vendor.toml
+└── src
+    ├── audit.rs
+    ├── cli.rs
+    ├── lib.rs
+    ├── main.rs
+    └── opts.rs
 
-2 directories, 14 files
+2 directories, 16 files
 ```
 
 # Features
