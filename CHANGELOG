@@ -1,3 +1,9 @@
-Soc Virnyl Estela (1):
-      properly cleanup temporary directories
+Soc Virnyl Estela (7):
+      add service file
+      improvements in the service file
+      add COC and CONTRIBUTING and CONTRIBUTORS
+      update README
+      add these two. knowledge i gained from this project (and some code copied over) and help from other projects came from them
+      prepare tests
+      prepare ci workflow
 
