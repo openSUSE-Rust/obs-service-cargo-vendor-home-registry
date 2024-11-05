@@ -5,24 +5,24 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4", features = ["derive", "help", "unstable-doc", "wrap_help"] }
-terminfo = "0.9.0"
-tracing = { version = "0.1.40", features = [
+terminfo = "0.9"
+tracing = { version = "0.1", features = [
         "max_level_trace",
         "release_max_level_debug",
 ] }
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 libroast = "^5"
-tempfile = "3.13.0"
-rustsec = "0.30.0"
+tempfile = "3.13"
+rustsec = "0.30"
 sha3 = { version = "0.11.0-pre.4" }
 hex-literal = "0.4.1"
 hex = "0.4.3"
 
 [dev-dependencies]
-rand = "0.8.5"
-reqwest = "0.12.9"
-tokio = { version = "1.41.0", features = ["full"] }
-tokio-test = "0.4.4"
+rand = "0.8"
+reqwest = "0.12"
+tokio = { version = "1.41", features = ["full"] }
+tokio-test = "0.4"
 test-log = { version = "^0.2", features = ["trace"] }
 
 [[bin]]
