@@ -1,5 +1,13 @@
 # OBS Service Cargo Vendor Home Registry
 
+> [!IMPORTANT]
+> This project's logic and code has now been merged to
+> [obs-service-cargo](https://github.com/openSUSE-Rust/obs-service-cargo)
+> as a new **method** for vendoring.
+>
+> No further updates will be added here in the future and thus, it will be
+> archived.
+
 [![CI](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml/badge.svg)](https://github.com/openSUSE-Rust/obs-service-cargo-vendor-home-registry/actions/workflows/ci.yml)
 [![build result](https://build.opensuse.org/projects/devel:languages:rust/packages/obs-service-cargo-vendor-home-registry/badge.svg?type=percent)](https://build.opensuse.org/package/show/devel:languages:rust/obs-service-cargo-vendor-home-registry)
 
